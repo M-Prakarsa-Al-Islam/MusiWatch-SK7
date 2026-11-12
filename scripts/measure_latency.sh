@@ -12,8 +12,10 @@ for _ in $(seq "$N"); do
   curl -o /dev/null -s -w "a_tanpa_kompresi,$FMT" "$BASE/v1/stations?limit=500"
   curl -o /dev/null -s --compressed -w "b_kompresi,$FMT" "$BASE/v1/stations?limit=500"
 done
-ETAG=$(curl -sI "$BASE/v1/stations?limit=50" | grep -i '^etag' | cut -d' ' -f2 | tr -d '\r')
+ETAG=$(curl -s -D - -o /dev/null "$BASE/v1/stations?limit=50" | grep -i '^etag' | cut -d' ' -f2 | tr -d '\r')
+[ -n "$ETAG" ] || { echo "ETag kosong, periksa server" >&2; exit 1; }
 for _ in $(seq "$N"); do
+  curl -o /dev/null -s -w "c0_tanpa_etag,$FMT" "$BASE/v1/stations?limit=50"
   curl -o /dev/null -s -H "If-None-Match: $ETAG" -w "c_etag,$FMT" "$BASE/v1/stations?limit=50"
 done
 if [ -n "$HTTPS_URL" ]; then
